@@ -1,0 +1,22 @@
+<h2>user: {{userURL}}</h2>
+
+<p>{{profile.name}}</p>
+
+<p>{{profile.selfDescription}}</p>
+
+<img width="100" height="100" src="{{profile.imageURL}}" ng-show="profile.imageURL" />
+
+<h3>Subscriptions</h3>
+
+<ul>
+	<li ng-repeat="subscription in subscriptions"><a href="#/forum/{{subscription.forum}}">{{subscription.forum}}</a></li>
+</ul>
+
+<h3>Activity</h3>
+
+<div class="feed">
+	<div ng-repeat="item in activity" class="{{ item.is_root ? 'post' : 'comment'}}" >
+		<a class="title" href="#/thread/{{semiBareURL(item.thread_id)}}">{{item.is_root ? item.title : item.text}}</a>
+		<span ng-show="item.is_root">to <a class="forum" href="#/forum/{{item.forum}}">{{item.forum}}</a></span>
+	</div>
+</div>

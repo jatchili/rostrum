@@ -1,0 +1,13 @@
+<h2>forum: {{route.current.params.forumURL}}</h2>
+
+<input id="myThreadTitle" type="text" placeholder="title" /><br/>
+<textarea id="myThreadText" placeholder="text (optional)"></textarea><br/>
+<button ng-click="submitPost()">submit</button>
+
+<div class="feed">
+	<div class="post" ng-repeat="item in feed">
+		<a class="title" href="#/thread/{{semiBareURL(item.thread_id)}}">{{item.title}}</a>
+		by
+		<a class="author" href="#/user/{{item.author}}">{{item.author}}</a>
+	</div>
+</div>

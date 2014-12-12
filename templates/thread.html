@@ -1,0 +1,30 @@
+<div ng-show="treeRoot">
+	<h2 style="display:inline">{{treeRoot.title}}</h2>
+	by
+	<a class="author" href="#/user/{{treeRoot.author}}">{{treeRoot.author}}</a>
+	to
+	<a class="forum" href="#/forum/{{treeRoot.forum}}">{{treeRoot.forum}}</a>
+	<p>{{treeRoot.text}}</p>
+	<br/>
+	<textarea id="myReplyToRoot"></textarea><br/>
+	<button ng-click="replyToRoot()">submit</button>
+</div>
+
+<script type="text/ng-template"  id="commentTemplate.html">
+    <a class="author" href="#/user/{{comment.author}}">
+    	{{comment.author}}
+    </a>
+	{{comment.text}}
+	<br/>
+	<a href="javascript:void(0)" onClick="$(this).closest('.comment').find('.replyBox').first().toggle()">reply</a>
+	<div class="replyBox" style="display:none;">
+		<textarea class="myReplyToComment" tocomment="{{comment._id}}"></textarea><br/>
+		<button ng-click="replyToComment(this)">submit</button>
+	</div>
+	<div class="comment" ng-repeat="comment in comment.children" ng-include="'commentTemplate.html'"></div>
+    </td>
+</script>
+
+<div id="comments">
+    <div class="comment" ng-repeat="comment in treeRoot.children" ng-include="'commentTemplate.html'"></div>
+</div>

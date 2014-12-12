@@ -1,0 +1,14 @@
+<div id="subscriptions">
+	<a ng-repeat="subscription in subscriptions" href="#/forum/{{subscription.forum}}"><span>{{subscription.forum}}</span></a>
+	<button ng-click="addSubscription()">new subscription</button>
+</div>
+
+<div class="feed">
+	<div class="post" ng-repeat="item in feed">
+		<a class="title" href="#/thread/{{semiBareURL(item.thread_id)}}">{{item.title}}</a>
+		by
+		<a class="author" href="#/user/{{item.author}}">{{item.author}}</a>
+		to
+		<a class="forum" href="#/forum/{{item.forum}}">{{item.forum}}</a>
+	</div>
+</div>
