@@ -120,15 +120,20 @@ rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
 
     pod.onLogin( function(){
     	console.log("QUERY!");
+    	var rootsCount = 0;
     	pod.query().filter( {
 	    	type: "post",
 	    	is_root: true,
 	    	forum: $route.current.params.forumURL
 	    } ).onAllResults(function(roots) {
-	    	console.log("GOT ROOTS!", roots);
-	    	$scope.$apply(function(){
-	    		$scope.feed = roots;
-	    	});
+	    	if (roots.length !== rootsCount) {
+				console.log("GOT ROOTS!", roots);
+				rootsCount = roots.length;
+	    		$scope.$apply(function(){
+	    			$scope.feed = roots;
+	    		});
+	    	}
+	    	
 	    }).start();
 
     });
