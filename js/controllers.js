@@ -11,16 +11,20 @@ rostrumControllers.controller('HomeCtrl', ['$scope',/* '$http',*/
 	$scope.semiBareURL = semiBareURL;
 
 	pod.onLogin(function(){
+		var subscriptionsCount = 0;
 		pod.query().filter( {
 	    	type: "subscription",
 	    	_owner: pod.getUserId() 
 	    }).onAllResults(function(subscriptions){
-	    	if (subscriptions.length) {
-		    	$scope.$apply(function(){
-		    		$scope.subscriptions = subscriptions;
-		    		updateFeed();
-		    	});
-		    }
+	    	if (subscriptionsCount !== subscriptions.length) {
+		    	subscriptionsCount = subscriptions.length
+		    	if (subscriptions.length) {
+			    	$scope.$apply(function(){
+			    		$scope.subscriptions = subscriptions;
+			    		updateFeed();
+			    	});
+			    }
+			}
 	    }).start();
 	});
 
