@@ -5,6 +5,9 @@ var pod = crosscloud.connect();
 
 
 function semiBareURL(messyURL) {
+  if (!messyURL) {
+    return false;
+  }
 	var bare = messyURL.toLowerCase();
 	if (bare.indexOf("://") !== -1) {
 		bare = bare.substring(bare.indexOf("://") + 3);
@@ -12,6 +15,9 @@ function semiBareURL(messyURL) {
 	return bare;
 }
 function bareURL(messyURL) {
+  if (!messyURL) {
+    return false;
+  }
 	var bare = semiBareURL(messyURL);
 	if (bare.indexOf("/") !== -1) {
 		bare = bare.substring(0,bare.indexOf("/"));

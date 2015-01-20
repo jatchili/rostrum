@@ -1,13 +1,31 @@
-<h2>forum: {{route.current.params.forumURL}}</h2>
+<b style="float:left; font-size: 150%">forum: {{route.current.params.forumURL}}</b>
+<a style="float:right;" href="javascript:void(0)" ng-click="toggleSettings()"><b><span ng-hide="settingsVisible">&laquo; </span>settings<span ng-show="settingsVisible"> &raquo;</span></b></a>
+<div style="clear:both"></div><br/>
 
-<input id="myThreadTitle" type="text" placeholder="title" /><br/>
-<textarea id="myThreadText" placeholder="text (optional)"></textarea><br/>
-<button ng-click="submitPost()">submit</button>
 
-<div class="feed">
-	<div class="post" ng-repeat="item in feed">
-		<a class="title" href="#/thread/{{semiBareURL(item.thread_id)}}">{{item.title}}</a>
-		by
-		<a class="author" href="#/user/{{item.author}}">{{item.author}}</a>
+<div style="float:left;" ng-class="{'mainColumn': settingsVisible, 'onlyColumn': !settingsVisible}">
+	<input id="myThreadTitle" type="text" placeholder="title" /><br/>
+	<textarea id="myThreadText" placeholder="text (optional)"></textarea><br/>
+	<button ng-click="submitPost()">submit</button>
+
+	<div class="feed">
+		<div class="post" ng-repeat="item in feed">
+			<a class="title" href="#/thread/{{semiBareURL(item.thread_id)}}">{{item.title}}</a>
+			by
+			<a class="author" href="#/user/{{item.author}}">{{item.author}}</a>
+		</div>
 	</div>
 </div>
+
+<div style="float:right;" class="sideBar" ng-show="settingsVisible">
+	<b>moderators for this forum:</b>
+	<ul>
+		<li>self</li>
+		<li ng-repeat="ms in forumModerators">
+			<a class="author" href="#/user/{{ms.moderator}}">{{ms.moderator}}</a> <a class="xout" href="javascript:void(0)" ng-click="deleteModerator(this)">&cross;</a>
+		</li>
+		<li><button ng-click="addModerator()">add new</button></li>
+	</ul>
+</div>
+
+<div style="clear:both;"></div>

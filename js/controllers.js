@@ -81,7 +81,7 @@ rostrumControllers.controller('HomeCtrl', ['$scope',/* '$http',*/
   }
 ]);
 
-
+/*
 function submitPost() {
 	var title = $("#myThreadTitle").val();
 	var text = $("#myThreadText").val();
@@ -90,7 +90,7 @@ function submitPost() {
 	} else {
 		addThread(currentForumURL, title, text); //TODO: Global abatement
 	}
-}
+}*/
 
 rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
   function ($scope, $route) {
@@ -104,6 +104,31 @@ rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
 	$scope.route = $route;
 
 	$scope.semiBareURL = semiBareURL;
+
+	$scope.settingsVisible = false;
+	$scope.toggleSettings = function() {
+		$scope.settingsVisible = !($scope.settingsVisible);
+	}
+
+
+	$scope.addModerator = function() {
+		var newModerator = prompt("Moderator URL:");
+		newModerator = bareURL(newModerator);
+		if (newModerator) {
+			pod.push({
+				type: "moderatorSubscription",
+				forum: $route.current.params.forumURL,
+				moderator: newModerator
+			}, function(){
+				console.log("SUCCESSFULLY ADDED MODERATOR");
+			});
+		}
+	}
+
+	$scope.deleteModerator = function(that) {
+		console.log("DELETING MOD:", that, that.ms._id);
+		pod.delete({_id: that.ms._id});
+	}
 
 	//$scope.forum || ($scope.forum = {});
 
@@ -121,7 +146,7 @@ rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
     ];*/
 
     $scope.feed = [];
-
+    $scope.forumModerators = [];
     pod.onLogin( function(){
     	console.log("QUERY!");
     	var rootsCount = 0;
@@ -139,6 +164,25 @@ rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
 	    	}
 	    	
 	    }).start();
+
+	    //TODO: This is very redundant with the "getModerators()" function below
+		var modsCount = 0;
+		pod.query().filter({
+			type: "moderatorSubscription",
+			forum: $route.current.params.forumURL,
+			_owner: pod.getUserId(),
+			moderator: { "$exists": true }
+		}).onAllResults(function(mss){
+			//console.log("mods:", mss);
+			if (mss.length !== modsCount) {
+				modsCount = mss.length;
+				$scope.$apply(function(){
+	    			$scope.forumModerators = mss;
+	    			console.log("MSS", mss);
+	    		});
+			}
+		}).start()
+
 
     });
     
@@ -181,30 +225,15 @@ rostrumControllers.controller('ForumCtrl', ['$scope', '$route',
 
 rostrumControllers.controller('ThreadCtrl', ['$scope', '$route',
   function ($scope, $route) {
-    
+    // Setup procedure:
+    // getPosts -> getModerators -> getHidings -> updateTree
+    // However, if the thread doesn't change, skip straight from getPosts to updateTree.
+    pod.onLogin(getPosts);
+
     var idMap = {};
-    var rootPost;
+    var rootPost, rootID;
     $scope.treeRoot;
-
-    function updateTree() {
-    	for (var postID in idMap) {
-			idMap[postID].children = [];
-		}
-		for (var postID in idMap) {
-			var post = idMap[postID];
-			if (idMap[post.parent]) {
-				//post.parent.children || (post.parent.children=[]);
-				//console.log("POST PARENT:", post.parent)
-				idMap[post.parent].children.push(post);
-			}
-		}
-    	$scope.$apply(function(){
-    		$scope.treeRoot = rootPost;
-    		console.log("TREE UPDATED:", $scope.treeRoot);
-    	});
-    }
-
-    pod.onLogin(function(){
+    function getPosts(){
     	console.log("THREAD:", $route.current.params);
 		var postsCount = 0;
 		pod.query().filter( {
@@ -222,10 +251,82 @@ rostrumControllers.controller('ThreadCtrl', ['$scope', '$route',
 						rootPost = post;
 					}
 				}
-				updateTree();
+				if (rootPost._id === rootID) {
+					updateTree();
+				} else {
+					rootID = rootPost._id;
+					getModerators();
+				}
 			}
 		}).start();
-    });
+	}
+
+	var moderators = [];
+	function getModerators() {
+		console.log("GETTING MODERATORS FOR FORUM:", rootPost.forum);
+		pod.query().filter({
+			type: "moderatorSubscription",
+			forum: rootPost.forum,
+			_owner: pod.getUserId()
+		}).onAllResults(function(mss){
+			moderators = mss.map(function(ms){return ms.moderator});
+			//moderators = []; //EXAMPLE
+			moderators.push(bareURL(pod.getUserId())); //Add yourself as a moderator
+			getHidings();
+		}).start()
+	}
+
+	var hidings = false;
+	var ohsl = -1;
+	function getHidings() {
+		// TODO: Only ask for these from subscribed moderators,
+		// and updateTree asynchronously, so we don't have to wait for laggy moderators.
+		pod.query().filter({ 
+			type: "hiding",
+		    thread_id: "http://" + 
+				$route.current.params.authorURL + 
+				"/" + $route.current.params.threadID, //TODO: Make this neater
+		}).onAllResults(function(hs){
+			//console.log("GOT HIDINGS:", hs);
+			if (ohsl !== hs.length) {
+				ohsl = hs.length;
+				hidings = hs.filter(function(hiding){
+					return moderators.indexOf(bareURL(hiding._owner)) !== -1
+				});
+				console.log("FILTERED HIDINGS:", hidings);
+				updateTree();
+			} /*else {
+				console.log("WHY WON'T YOU STOP CALLING THIS!");
+				//TODO: What's going on here?
+			}*/
+			
+		}).start();
+	}
+
+
+    function updateTree() {
+    	for (var postID in idMap) {
+			idMap[postID].children = [];
+		}
+		for (var postID in idMap) {
+			var post = idMap[postID];
+			if (idMap[post.parent]) {
+				//post.parent.children || (post.parent.children=[]);
+				//console.log("POST PARENT:", post.parent)
+				idMap[post.parent].children.push(post);
+			}
+		}
+		for (var i=0; i<hidings.length; i++) {
+			var hiding = hidings[i];
+			console.log("HIDING:", hiding);
+			idMap[hiding.subject_id]["hidden"] = true;
+		}
+    	$scope.$apply(function(){
+    		$scope.treeRoot = rootPost;
+    		console.log("TREE UPDATED:", $scope.treeRoot);
+    	});
+    }
+
 
     $scope.replyToRoot = function() {
     	var text = $("#myReplyToRoot").val();
@@ -241,7 +342,7 @@ rostrumControllers.controller('ThreadCtrl', ['$scope', '$route',
 		        thread_id: "http://" + 
 					$route.current.params.authorURL + 
 					"/" + $route.current.params.threadID, //TODO: Make this neater
-		        forum: $route.current.params.forumURL
+		        //forum: $route.current.params.forumURL
 		    };
 		    pod.push(reply, function(){
 		    	$("textarea").val("");
@@ -267,7 +368,7 @@ rostrumControllers.controller('ThreadCtrl', ['$scope', '$route',
 		        thread_id: "http://" + 
 					$route.current.params.authorURL + 
 					"/" + $route.current.params.threadID, //TODO: Make this neater
-		        forum: $route.current.params.forumURL
+		        //forum: $route.current.params.forumURL
 		    };
 		    pod.push(reply, function(){
 		    	console.log("SUCCESSFULLY COMMENT REPLY");
@@ -275,6 +376,33 @@ rostrumControllers.controller('ThreadCtrl', ['$scope', '$route',
 		    	//$(".replyBox").hide();
 		    });
 		}
+    }
+
+    $scope.submitHide = function(localScope) {
+    	if (confirm("Are you sure?")) {
+    		//console.log("HIDE LS!", localScope);
+    		var subjectID = localScope.comment._id;
+    		console.log("SUBJECT:", subjectID);
+    		var hiding = {
+    			type: "hiding",
+    			author: bareURL(pod.getUserId()),
+    			//forum: $route.current.params.forumURL,
+		        thread_id: "http://" + 
+					$route.current.params.authorURL + 
+					"/" + $route.current.params.threadID, //TODO: Make this neater
+    			subject_id: subjectID
+    		}
+    		pod.push(hiding, function(){
+    			console.log("SUCCESFULLY SUBMITTED HIDING");
+
+    		});
+    	}
+    }
+
+    //TODO: reduce redundancy
+
+    $scope.submitUnhide = function(localScope) {
+    	alert("this doesn't actually work");
     }
 
 

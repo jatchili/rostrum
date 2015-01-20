@@ -75,11 +75,49 @@ textarea {
     margin-top: 10px;
 }
 
+
+
+.comment.hidden {
+	color: #bbb;
+}
+.comment.hidden > a {
+	color: #bbf;
+}
+
+.comment:not(.hidden) {
+	color: black;
+}
+.comment:not(.hidden) > a {
+	color: blue;
+}
+
 .comment .author {
     font-weight: bold;
-    color: blue;
     display: block;
 }
+.comment .action {
+	margin-right: 20px;
+}
+
+
+.onlyColumn {
+	width: 100%;
+}
+
+.mainColumn {
+	width: 80%;
+}
+
+.sideBar {
+	width: 19%;
+}
+
+a.xout {
+	color: #800;
+	font-weight: bold;
+	text-decoration: none;
+}
+
 
 	</style>
 	<script src="js/crosscloud-0.1.3.js"></script>
@@ -92,7 +130,8 @@ textarea {
 </head>
 <body>
 	<div id="topbar">
-		<a href="#/"><b>home</b></a>
+		<a style="float:left" href="#/"><b>home</b></a>
+		<div style="clear:both"></div>
 	</div>
 	<div ng-view></div>
 </body>
